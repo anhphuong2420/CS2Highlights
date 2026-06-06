@@ -1,0 +1,29 @@
+# Build output
+bin/
+obj/
+
+# User-specific VS files
+*.user
+*.suo
+.vs/
+
+# App secrets — NEVER commit
+appsettings.json
+
+# SQLite database
+*.db
+*.db-shm
+*.db-wal
+
+# Generated clips, demos, cfg scripts (large binary/media files)
+demos/
+clips/
+cfg/
+
+# Logs
+logs/
+*.log
+
+# OS
+Thumbs.db
+desktop.ini
