@@ -71,17 +71,18 @@ Steps 8 and 9 are fully automatic. The user just waits ~2 minutes.
 |---|---|---|
 | CS2 (Steam) | Plays back demo files for rendering | Already installed |
 | HLAE | Injects into CS2, controls frame capture | advancedfx.org — free |
-| FFmpeg | Encodes frames to .mp4 | Install via HLAE installer — easiest option |
+| FFmpeg | Encodes frames to .mp4 | Installed via `winget install Gyan.FFmpeg` |
 
 ### 2.3 NuGet Packages
 
 | Package | Project | Purpose |
 |---|---|---|
-| `DemoFile.Net` | Parser | Parses CS2 `.dem` files — kills, ticks, rounds, player events |
+| `DemoFile` + `DemoFile.Game.Cs` | Parser | Parses CS2 `.dem` files — kills, ticks, rounds, player events |
 | `SteamKit2` | Steam | Steam Game Coordinator — fetch share codes + demo download URLs |
 | `Microsoft.Data.Sqlite` | Database | SQLite access |
 | `Microsoft.EntityFrameworkCore.Sqlite` | Database | EF Core ORM for SQLite |
-| `Serilog` | All | Logging — critical for debugging HLAE/CS2 launch issues |
+| `Microsoft.EntityFrameworkCore.Tools` | Database | EF Core CLI tools for running migrations |
+| `Serilog` + `Serilog.Sinks.File` | Renderer, WinForms | Logging — critical for debugging HLAE/CS2 launch issues |
 | `Microsoft.Extensions.DependencyInjection` | WinForms | DI container wired up in `Program.cs` — injects services into forms |
 
 ### 2.4 FFmpeg Setup
@@ -106,7 +107,7 @@ The app reads the FFmpeg path from `appsettings.json` (`Paths.FfmpegExe`) and pa
 ### 3.1 Project Structure
 
 ```
-CS2Highlights.sln
+CS2Highlights.slnx
 ├── CS2Highlights.Core          Business logic, models, interfaces — no UI dependencies
 ├── CS2Highlights.Parser        .dem file parsing + highlight/lowlight detection
 ├── CS2Highlights.Renderer      HLAE + FFmpeg orchestration
@@ -116,7 +117,36 @@ CS2Highlights.sln
 └── CS2Highlights.Tests         Unit tests for parsers and detectors
 ```
 
-### 3.2 Data Flow
+### 3.2 Project Dependency Diagram
+
+```mermaid
+graph TD
+    Core["CS2Highlights.Core\n(models, enums, interfaces)"]
+
+    Parser["CS2Highlights.Parser\n(DemoFile, DemoFile.Game.Cs)"]
+    Renderer["CS2Highlights.Renderer\n(HLAE, FFmpeg)"]
+    Steam["CS2Highlights.Steam\n(SteamKit2)"]
+    Database["CS2Highlights.Database\n(EF Core + SQLite)"]
+
+    WinForms["CS2Highlights.WinForms\n(UI entry point)"]
+    Tests["CS2Highlights.Tests\n(NUnit)"]
+
+    Parser --> Core
+    Renderer --> Core
+    Steam --> Core
+    Database --> Core
+
+    WinForms --> Core
+    WinForms --> Parser
+    WinForms --> Renderer
+    WinForms --> Steam
+    WinForms --> Database
+
+    Tests --> Core
+    Tests --> Parser
+```
+
+### 3.3 Data Flow
 
 ```
 [Steam API]
@@ -195,7 +225,7 @@ ISteamService        GetMatchesAsync(string steamId) → List<MatchInfo>
 
 #### DemoParser.cs
 
-Wraps DemoFile.NET. Reads the `.dem` binary, subscribes to game events, and emits typed C# objects. Returns a `ParsedMatch` containing all raw events sorted by tick.
+Wraps `DemoFile.Game.Cs`. Reads the `.dem` binary, subscribes to game events, and emits typed C# objects. Returns a `ParsedMatch` containing all raw events sorted by tick.
 
 #### Detectors (one class per rule)
 
@@ -424,7 +454,7 @@ Every highlight and lowlight type in Section 5 has an individual toggle + thresh
 - WinForms shell: `MainForm` with tab layout + `SettingsPanel` (save API key, paths, Steam ID)
 
 ### Phase 2 — The Brain
-- `DemoParser` wrapping DemoFile.NET
+- `DemoParser` wrapping `DemoFile.Game.Cs`
 - `MultiKillDetector` + `ClutchDetector` (highest value, cleanest signals)
 - `MatchesPanel` + `MatchDetailPanel` showing detected highlights in a `DataGridView`
 - `EntryFragDetector` + `DeathStreakDetector` + `FriendlyFireDetector`
@@ -491,7 +521,7 @@ Expected render speed   : ~1.5–2x realtime at 1080p/60fps
 | `host_framerate` | CS2 console command that overrides game clock speed. Setting to 300 makes CS2 simulate time ~5x faster than real-time. |
 | `Tick` | CS2 game unit of time. Matchmaking runs at 64 ticks/sec. Demo files record all events at tick resolution. |
 | `Share Code` | Valve's encoded string (`CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX`) that identifies a specific match and contains enough info to download its demo. |
-| `DemoFile.NET` | Open-source C# library for parsing CS2 `.dem` files. Exposes typed C# events for kills, rounds, grenades, etc. |
+| `DemoFile` / `DemoFile.Game.Cs` | Open-source C# library for parsing CS2 `.dem` files. Exposes typed C# events for kills, rounds, grenades, etc. |
 | `SteamKit2` | Open-source C# library for communicating with Steam services including the Game Coordinator. |
 | `Game Coordinator` | Valve's internal service that holds match metadata and demo download URLs. Accessed via SteamKit2. |
 | `NVENC` | NVIDIA video encoding hardware built into the GPU. On RTX 2060 it runs independently of the 3D render pipeline. |

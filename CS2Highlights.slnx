@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="CS2Highlights.Core/CS2Highlights.Core.csproj" />
+  <Project Path="CS2Highlights.Database/CS2Highlights.Database.csproj" />
+  <Project Path="CS2Highlights.Parser/CS2Highlights.Parser.csproj" />
+  <Project Path="CS2Highlights.Renderer/CS2Highlights.Renderer.csproj" />
+  <Project Path="CS2Highlights.Steam/CS2Highlights.Steam.csproj" />
+  <Project Path="CS2Highlights.Tests/CS2Highlights.Tests.csproj" />
+  <Project Path="CS2Highlights.WinForms/CS2Highlights.WinForms.csproj" />
+</Solution>

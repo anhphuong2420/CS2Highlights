@@ -18,7 +18,7 @@ Set up everything needed before writing a single line of app code.
 ---
 
 ## Step 1 — Solution Scaffold
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Create the blank solution and all 6 projects with correct references. No logic yet — just structure.
 
@@ -29,23 +29,23 @@ Projects to create:
 - `CS2Highlights.Steam` — Class Library (net10.0) → refs Core
 - `CS2Highlights.Database` — Class Library (net10.0) → refs Core
 - `CS2Highlights.WinForms` — Windows Forms App (net10.0-windows) → refs all above
-- `CS2Highlights.Tests` — xUnit Test Project (net10.0) → refs Parser, Core
+- `CS2Highlights.Tests` — NUnit Test Project (net10.0) → refs Parser, Core
 
 NuGet packages to install per project:
 - Core: _(none)_
-- Parser: `DemoFile.Net`
+- Parser: `DemoFile`, `DemoFile.Game.Cs`
 - Steam: `SteamKit2`
 - Database: `Microsoft.Data.Sqlite`, `Microsoft.EntityFrameworkCore.Sqlite`, `Microsoft.EntityFrameworkCore.Tools`
 - Renderer: `Serilog`, `Serilog.Sinks.File`
 - WinForms: `Microsoft.Extensions.DependencyInjection`, `Serilog`, `Serilog.Sinks.File`
-- Tests: `xunit`, `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio`
+- Tests: `NUnit`, `NUnit3TestAdapter`, `Microsoft.NET.Test.Sdk`
 
 **Acceptance criteria:** Solution builds with 0 errors. All projects appear in Solution Explorer.
 
 ---
 
 ## Step 2 — Core Models, Enums & Interfaces
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Populate `CS2Highlights.Core` with all data models, enums, and service interfaces. No implementation — only contracts.
 
@@ -285,4 +285,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 0 — done. Awaiting review before Step 1.*
+*Last updated: Step 2 — done. Awaiting review before Step 3.*
