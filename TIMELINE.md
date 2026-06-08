@@ -78,15 +78,15 @@ Files to create in Core:
 ---
 
 ## Step 3 — Database Schema & Migrations
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Set up `CS2Highlights.Database` with EF Core, define all tables, run the initial migration.
 
-- [ ] Create `AppDbContext.cs` with DbSets for all tables
-- [ ] Create entity classes (mapped to DB tables): `MatchEntity`, `RoundEntity`, `KillEventEntity`, `GrenadeEventEntity`, `HighlightEntity`, `RenderJobEntity`, `UserSettingEntity`
-- [ ] Add initial EF Core migration
-- [ ] Create `SettingsRepository.cs` — get/set key-value pairs from `UserSettings` table
-- [ ] Verify SQLite file is created on first run
+- [x] Create `AppDbContext.cs` with DbSets for all tables
+- [x] Create entity classes (mapped to DB tables): `MatchEntity`, `RoundEntity`, `KillEventEntity`, `GrenadeEventEntity`, `HighlightEntity`, `RenderJobEntity`, `UserSettingEntity`
+- [x] Add initial EF Core migration
+- [x] Create `SettingsRepository.cs` — get/set key-value pairs from `UserSettings` table
+- [ ] Verify SQLite file is created on first run (pending first app launch)
 
 Tables (from DESIGN.md §4.5):
 `Matches`, `Rounds`, `KillEvents`, `GrenadeEvents`, `Highlights`, `RenderJobs`, `UserSettings`
@@ -289,4 +289,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 2 — done. Architecture updated (no Steam API, folder scan + player picker). Awaiting review before Step 3.*
+*Last updated: Step 3 — done. Ready for Step 4.*

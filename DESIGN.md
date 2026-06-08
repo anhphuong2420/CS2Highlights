@@ -346,6 +346,96 @@ RenderJobs       Id, HighlightId(FK), QueuedAt, StartedAt, FinishedAt,
 UserSettings     Key, Value   (HLAE path, FFmpeg path, folder paths, detection thresholds)
 ```
 
+#### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    Matches {
+        int Id PK
+        string MatchId "unique per player"
+        string DemoPath
+        string DemoFileName
+        string Map
+        datetime Date
+        string SelectedPlayerSteamId "unique per player"
+        string SelectedPlayerName
+        datetime ParsedAt "nullable"
+    }
+
+    Rounds {
+        int Id PK
+        int MatchId FK
+        int RoundNumber
+        int TickStart
+        int TickEnd
+        string WinnerSide "CT or T"
+    }
+
+    KillEvents {
+        int Id PK
+        int MatchId FK
+        int RoundId FK
+        int Tick
+        string KillerSteamId
+        string VictimSteamId
+        string Weapon
+        bool IsHeadshot
+        bool IsWallbang
+        bool IsNoscope
+    }
+
+    GrenadeEvents {
+        int Id PK
+        int MatchId FK
+        int RoundId FK
+        int Tick
+        string ThrowerSteamId
+        string GrenadeType
+        int DmgToEnemies
+        int DmgToTeam
+        int EnemiesBlinded
+        int TeammatesBlinded
+    }
+
+    Highlights {
+        int Id PK
+        int MatchId FK
+        int RoundId FK "nullable"
+        string HighlightType "nullable"
+        string LowlightType "nullable"
+        int TickStart
+        int TickEnd
+        string Description
+        string ClipPath "nullable"
+        string RenderStatus
+    }
+
+    RenderJobs {
+        int Id PK
+        int HighlightId FK
+        datetime QueuedAt
+        datetime StartedAt "nullable"
+        datetime FinishedAt "nullable"
+        string Status
+        string ClipPath "nullable"
+        string ErrorMessage "nullable"
+    }
+
+    UserSettings {
+        string Key PK
+        string Value
+    }
+
+    Matches ||--o{ Rounds : "has"
+    Matches ||--o{ KillEvents : "has"
+    Matches ||--o{ GrenadeEvents : "has"
+    Matches ||--o{ Highlights : "has"
+    Rounds ||--o{ KillEvents : "belongs to"
+    Rounds ||--o{ GrenadeEvents : "belongs to"
+    Rounds |o--o{ Highlights : "belongs to"
+    Highlights ||--o{ RenderJobs : "rendered by"
+```
+
 ---
 
 ### 4.6 CS2Highlights.WinForms
