@@ -4,5 +4,6 @@ namespace CS2Highlights.Core.Interfaces;
 
 public interface IDemoParser
 {
-    Task<ParsedMatch> ParseAsync(string demoPath, string steamId);
+    Task<List<PlayerInfo>> ReadPlayersAsync(string demoPath);
+    Task<ParsedMatch> ParseAsync(string demoPath, PlayerInfo selectedPlayer);
 }

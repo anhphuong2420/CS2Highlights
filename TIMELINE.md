@@ -95,45 +95,49 @@ Tables (from DESIGN.md §4.5):
 
 ---
 
-## Step 4 — Steam Service
+## Step 4 — Demo Scanner
 **Status:** `[ ]`
 
-Implement `CS2Highlights.Steam` — fetch match share codes and download demo files.
+Implement `CS2Highlights.DemoScanner` — scan the demos folder and read lightweight info from demo headers.
 
-- [ ] `ShareCodeService.cs` — decode share code, call `ICSGOPlayers_730/GetNextMatchSharingCode`, chain until no new codes
-- [ ] `DemoDownloader.cs` — request demo URL from Steam Game Coordinator via SteamKit2, download `.dem` to demos folder, skip if already downloaded
-- [ ] Wire Steam API key + Steam ID from `UserSettings`
+- [ ] `DemoFolderScanner.cs` — implements `IDemoScanner`, calls `Directory.GetFiles(folder, "*.dem")`, returns `List<DemoFileInfo>`
+- [ ] `LightweightDemoReader.cs` — opens a `.dem`, reads header only to extract: Match ID, map name, match date, all 10 players (SteamId + name). Returns in under 2 seconds.
+- [ ] Before full parse: check if (MatchId + SelectedPlayerSteamId) already exists in DB — skip if so
 
-**Acceptance criteria:** Given a valid Steam API key and share code, the service downloads a `.dem` file to the configured demos folder.
+**Acceptance criteria:** Drop a `.dem` into the demos folder → app lists it → selecting it shows a player picker with all 10 players populated.
 
 ---
 
 ## Step 5 — WinForms Shell + Settings Panel
 **Status:** `[ ]`
 
-Build the app skeleton — launch it, see a window, configure paths and Steam credentials.
+Build the app skeleton — launch it, see a window, configure paths.
 
 - [ ] `Program.cs` — DI container setup, configure Serilog, launch `MainForm`
 - [ ] `MainForm.cs` — `TabControl` with tabs: Dashboard, Matches, Render, Clips, Settings
-- [ ] `SettingsPanel.cs` — form fields for: Steam ID, Auth Code, API Key, Start Share Code, HLAE path, FFmpeg path, Demos folder, Clips folder, CFG folder
+- [ ] `SettingsPanel.cs` — form fields for: HLAE path, FFmpeg path, Demos folder, Clips folder, CFG folder
+- [ ] `PlayerPickerDialog.cs` — modal dialog showing a list of 10 players, returns selected `PlayerInfo`
 - [ ] Save/load all settings to `UserSettings` table via `SettingsRepository`
 - [ ] "Browse" buttons for file/folder path fields (`FolderBrowserDialog` / `OpenFileDialog`)
 
-**Acceptance criteria:** App launches. You can fill in settings and click Save. Values persist after restarting the app.
+**Acceptance criteria:** App launches. You can fill in path settings and click Save. Values persist after restarting the app. Player picker dialog opens and returns a selection.
 
 ---
 
 ## Step 6 — Demo Parser
 **Status:** `[ ]`
 
-Implement `CS2Highlights.Parser` — read a `.dem` file and produce a `ParsedMatch`.
+Implement `CS2Highlights.Parser` — two-phase parsing via `IDemoParser`.
 
-- [ ] `DemoParser.cs` — wraps `DemoFile.NET`, subscribes to game events, emits typed C# objects
-- [ ] Captures: kills, deaths, grenade throws + damage, round start/end, clutch situations (alive counts per team per tick)
+- [ ] `DemoParser.cs` implements both interface methods:
+  - `ReadPlayersAsync(demoPath)` — lightweight, reads header only, returns player list + match ID. Used to populate `PlayerPickerDialog`.
+  - `ParseAsync(demoPath, selectedPlayer)` — full parse for the chosen player. Subscribes to game events, emits typed C# objects.
+- [ ] Full parse captures: kills, deaths, grenade throws + damage, round start/end, alive counts per team per tick
 - [ ] Returns `ParsedMatch` with all events sorted by tick
-- [ ] Saves raw events to SQLite (`KillEvents`, `GrenadeEvents`, `Rounds` tables)
+- [ ] Saves raw events to SQLite (`Matches`, `Rounds`, `KillEvents`, `GrenadeEvents` tables)
+- [ ] Duplicate guard: if (MatchId + SelectedPlayerSteamId) already in DB → skip, return existing data
 
-**Acceptance criteria:** Point the parser at a real `.dem` file — it populates the DB tables with kills, rounds, and grenade events. Verified in DB Browser.
+**Acceptance criteria:** Select a demo → pick a player → full parse runs → DB populated with kills, rounds, grenade events. Picking the same demo + player again skips parsing. Verified in DB Browser.
 
 ---
 
@@ -157,13 +161,13 @@ Each detector:
 ## Step 8 — Matches Panel + Match Detail Panel
 **Status:** `[ ]`
 
-Build the UI to browse fetched matches and see their detected highlights.
+Build the UI to browse demos and see their detected highlights.
 
-- [ ] `MatchesPanel.cs` — `DataGridView` listing all matches (map, date, score, parse status). "Fetch New Matches" button triggers Steam service. "Parse" button triggers DemoParser.
-- [ ] `MatchDetailPanel.cs` — opens when a match is selected. Shows round timeline + list of detected highlights/lowlights with type, round, description.
-- [ ] `DashboardPanel.cs` — recent matches + any pending render jobs (can be minimal at this stage)
+- [ ] `DashboardPanel.cs` — scans demos folder on load, lists `.dem` files in a `DataGridView` (filename, size, date). "Parse" button triggers lightweight scan → `PlayerPickerDialog` → full parse.
+- [ ] `MatchesPanel.cs` — `DataGridView` listing all parsed demos from DB (map, date, selected player, parse status).
+- [ ] `MatchDetailPanel.cs` — opens when a parsed demo is selected. Shows list of detected highlights/lowlights with type, round, description. "Add to Render Queue" button per highlight.
 
-**Acceptance criteria:** Fetch a match → parse it → open match detail → see highlights listed.
+**Acceptance criteria:** Drop a demo → parse it → open match detail → see highlights listed. Parsing the same demo + player again skips to showing existing highlights.
 
 ---
 
@@ -285,4 +289,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 2 — done. Awaiting review before Step 3.*
+*Last updated: Step 2 — done. Architecture updated (no Steam API, folder scan + player picker). Awaiting review before Step 3.*

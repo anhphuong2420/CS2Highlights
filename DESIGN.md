@@ -33,17 +33,20 @@ This is a **personal home-use application** — not intended for public deployme
 
 ```
 1. Launch the WinForms desktop app
-2. Enter Steam ID + Auth Code once (saved to SQLite)
-3. App fetches recent matches from Steam API
-4. Select a match from the list
-5. App downloads the .dem file and parses it automatically
-6. App shows detected highlights and lowlights with round details
-7. Configure render options (resolution, FPS, what to include)
-8. Click Render — CS2 opens silently, renders clips, closes
-9. Browse finished .mp4 clips in the Clip Gallery
+2. App scans the configured demos folder — lists all .dem files found
+3. Select a demo from the list
+4. App does a lightweight scan — reads match ID + player list from demo header
+5. Player picker popup — choose which player to analyse (any of the 10 players)
+6. App runs full parse for the selected player → saves events to SQLite
+7. App shows detected highlights and lowlights with round details
+8. Configure render options (resolution, FPS, buffers)
+9. Click Render — CS2 opens silently, renders clips, closes
+10. Browse finished .mp4 clips in the Clip Gallery
 ```
 
-Steps 8 and 9 are fully automatic. The user just waits ~2 minutes.
+Steps 9 and 10 are fully automatic. The user just waits ~2 minutes.
+
+> **How to get demo files:** In CS2, go to Watch → Your Matches → Download. Drop the `.dem` file into the configured demos folder.
 
 ### 1.2 Key Design Principles
 
@@ -78,7 +81,6 @@ Steps 8 and 9 are fully automatic. The user just waits ~2 minutes.
 | Package | Project | Purpose |
 |---|---|---|
 | `DemoFile` + `DemoFile.Game.Cs` | Parser | Parses CS2 `.dem` files — kills, ticks, rounds, player events |
-| `SteamKit2` | Steam | Steam Game Coordinator — fetch share codes + demo download URLs |
 | `Microsoft.Data.Sqlite` | Database | SQLite access |
 | `Microsoft.EntityFrameworkCore.Sqlite` | Database | EF Core ORM for SQLite |
 | `Microsoft.EntityFrameworkCore.Tools` | Database | EF Core CLI tools for running migrations |
@@ -111,7 +113,7 @@ CS2Highlights.slnx
 ├── CS2Highlights.Core          Business logic, models, interfaces — no UI dependencies
 ├── CS2Highlights.Parser        .dem file parsing + highlight/lowlight detection
 ├── CS2Highlights.Renderer      HLAE + FFmpeg orchestration
-├── CS2Highlights.Steam         Steam API + demo downloading
+├── CS2Highlights.DemoScanner   Scans demos folder, reads lightweight demo info
 ├── CS2Highlights.Database      SQLite via EF Core
 ├── CS2Highlights.WinForms      .NET 10 Windows Forms desktop app
 └── CS2Highlights.Tests         Unit tests for parsers and detectors
@@ -125,7 +127,7 @@ graph TD
 
     Parser["CS2Highlights.Parser\n(DemoFile, DemoFile.Game.Cs)"]
     Renderer["CS2Highlights.Renderer\n(HLAE, FFmpeg)"]
-    Steam["CS2Highlights.Steam\n(SteamKit2)"]
+    DemoScanner["CS2Highlights.DemoScanner\n(folder scan + demo header read)"]
     Database["CS2Highlights.Database\n(EF Core + SQLite)"]
 
     WinForms["CS2Highlights.WinForms\n(UI entry point)"]
@@ -133,13 +135,13 @@ graph TD
 
     Parser --> Core
     Renderer --> Core
-    Steam --> Core
+    DemoScanner --> Core
     Database --> Core
 
     WinForms --> Core
     WinForms --> Parser
     WinForms --> Renderer
-    WinForms --> Steam
+    WinForms --> DemoScanner
     WinForms --> Database
 
     Tests --> Core
@@ -149,31 +151,34 @@ graph TD
 ### 3.3 Data Flow
 
 ```
-[Steam API]
-    │  GetNextMatchSharingCode → chain walk → demo download URL
-    ▼
-[DemoDownloader]  →  saves .dem  →  /demos/matchId.dem
+[Demos Folder]  ←  user drops .dem files here manually
     │
     ▼
-[DemoParser]      →  raw events  →  SQLite: kills, deaths, nades (per tick)
+[DemoScanner]     →  lists .dem files  →  MatchesPanel (filename, size, date)
+    │
+    ▼  (user selects a demo)
+[DemoParser.ReadPlayersAsync]  →  lightweight header read  →  player picker popup
+    │
+    ▼  (user picks a player)
+[DemoParser.ParseAsync]   →  full parse  →  SQLite: Matches, Rounds, KillEvents, GrenadeEvents
+    │  (checks MatchId + PlayerSteamId — skips if already parsed)
+    ▼
+[HighlightDetector]  →  applies rules  →  SQLite: Highlights (type, tick range)
     │
     ▼
-[HighlightDetector]  →  applies rules  →  SQLite: highlights table (type, tick range)
-    │
+[RenderOptionsPanel]  ←  user selects highlights + render settings
+    │  (checks RenderJobs table — warns if clip already exists)
     ▼
-[RenderOptionsPanel]  ←  user selects what to render + settings
-    │
-    ▼
-[RenderQueue]     →  one RenderJob per clip
+[RenderQueue]     →  one RenderJob per clip  →  SQLite: RenderJobs (status tracking)
     │
     ▼
 [CfgScriptBuilder]  →  generates .cfg script per clip
     │
     ▼
 [HlaeRenderer]    →  launches CS2+HLAE  →  frames  →  FFmpeg  →  .mp4
-    │
+    │  (updates RenderJob status to Done + saves clip path)
     ▼
-[ClipGallery]     →  user browses finished clips
+[ClipGallery]     →  user browses finished .mp4 clips
 ```
 
 ---
@@ -241,17 +246,22 @@ Wraps `DemoFile.Game.Cs`. Reads the `.dem` binary, subscribes to game events, an
 
 ---
 
-### 4.3 CS2Highlights.Steam
+### 4.3 CS2Highlights.DemoScanner
 
-#### ShareCodeService.cs
+No external API, no credentials. Reads the local filesystem and the demo file header only.
 
-Calls `ICSGOPlayers_730/GetNextMatchSharingCode` with a starting share code + user auth token. Chains calls forward until no new codes are found. Returns an ordered list of match share codes.
+#### DemoFolderScanner.cs
 
-#### DemoDownloader.cs
+Implements `IDemoScanner`. Calls `Directory.GetFiles(folder, "*.dem")` and returns a list of `DemoFileInfo` objects (file path, name, size, last modified). Used to populate the demo list in the UI.
 
-Decodes share code to match ID via SteamKit2. Requests demo download URL from Steam Game Coordinator. Downloads `.dem` file to `/demos/` directory. Skips if already downloaded (SHA check).
+#### LightweightDemoReader.cs
 
-> **Steam API Key required:** get one free at steamcommunity.com/dev/apikey. Store in `appsettings.json` — never commit to git.
+Opens a `.dem` file, reads just the header and the first few packets to extract:
+- **Match ID** — unique identifier baked into the demo by Valve. Used as the primary key in the `Matches` table. Rename-proof.
+- **Player list** — all 10 players with their SteamId and in-game name. Shown in the player picker popup.
+- **Map name** and **match date**.
+
+Closes the file without doing a full parse. Completes in under 2 seconds for any demo size.
 
 ---
 
@@ -312,17 +322,28 @@ Holds a list of `RenderJob` objects. Processes them sequentially — one CS2 ins
 #### Tables
 
 ```
-Matches          Id, SteamId, Map, Date, Score, DemoPath, ParsedAt
-Rounds           Id, MatchId, RoundNumber, TickStart, TickEnd, WinnerSide
-KillEvents       Id, MatchId, RoundId, Tick, KillerSteamId, VictimSteamId,
+Matches          Id, MatchId*, DemoPath, DemoFileName, Map, Date,
+                 SelectedPlayerSteamId, SelectedPlayerName, ParsedAt
+                 * unique per (MatchId + SelectedPlayerSteamId) — same demo parsed
+                   for different players creates separate rows
+
+Rounds           Id, MatchId(FK), RoundNumber, TickStart, TickEnd, WinnerSide
+
+KillEvents       Id, MatchId(FK), RoundId(FK), Tick, KillerSteamId, VictimSteamId,
                  Weapon, IsHeadshot, IsWallbang, IsNoscope
-GrenadeEvents    Id, MatchId, RoundId, Tick, ThrowerSteamId, GrenadeType,
+
+GrenadeEvents    Id, MatchId(FK), RoundId(FK), Tick, ThrowerSteamId, GrenadeType,
                  DmgToEnemies, DmgToTeam, EnemiesBlinded, TeammatesBlinded
-Highlights       Id, MatchId, RoundId, Type, TickStart, TickEnd,
-                 Description, ClipPath, RenderStatus
-RenderJobs       Id, HighlightId, QueuedAt, StartedAt, FinishedAt,
-                 Status, ErrorMessage
-UserSettings     Key, Value   (Steam API key, HLAE path, FFmpeg path, etc.)
+
+Highlights       Id, MatchId(FK), RoundId(FK), HighlightType, LowlightType,
+                 TickStart, TickEnd, Description, ClipPath, RenderStatus
+
+RenderJobs       Id, HighlightId(FK), QueuedAt, StartedAt, FinishedAt,
+                 Status, ClipPath, ErrorMessage
+                 * used to prevent duplicate renders — if Status=Done and
+                   ClipPath exists on disk, app warns before re-rendering
+
+UserSettings     Key, Value   (HLAE path, FFmpeg path, folder paths, detection thresholds)
 ```
 
 ---
@@ -335,12 +356,15 @@ Single executable desktop app. No web server, no browser required. All forms sha
 
 ```
 MainForm          Tab container hosting all panels below
-├── DashboardPanel    Recent matches list (DataGridView) + pending render jobs
-├── MatchesPanel      All fetched matches — map, date, score, parse status (DataGridView)
-├── MatchDetailPanel  Round timeline + highlights/lowlights list for one match
+├── DashboardPanel    Demo folder list (DataGridView) + pending render jobs
+├── MatchesPanel      Parsed demos — map, date, selected player, parse status
+├── MatchDetailPanel  Highlights/lowlights list for one parsed demo
 ├── RenderPanel       Render options + live queue progress (ProgressBar + log ListBox)
 ├── ClipGalleryPanel  Finished .mp4 files — list view + "Open in Explorer" button
-└── SettingsPanel     Steam ID, Auth Code, API Key, HLAE path, FFmpeg path
+└── SettingsPanel     HLAE path, FFmpeg path, folder paths, detection thresholds
+
+PlayerPickerDialog  Modal popup shown after lightweight scan — lists all 10 players
+                    in the demo, user picks one, full parse begins
 ```
 
 #### Detection Settings (SettingsPanel)
@@ -351,16 +375,12 @@ Each highlight/lowlight type from Section 5 gets one row: a `CheckBox` toggle an
 
 `RenderQueue` accepts an `IProgress<RenderProgress>` instance. The WinForms `RenderPanel` creates a `Progress<T>` that marshals updates back to the UI thread — no SignalR needed. A `ProgressBar` shows per-job completion; a `ListBox` streams log lines from HLAE stdout.
 
-#### appsettings.json (DO NOT COMMIT — add to .gitignore)
+#### appsettings.json (copy from `appsettings.template.json` on first run)
+
+No secrets — contains only local paths. Safe to keep private but nothing sensitive.
 
 ```json
 {
-  "Steam": {
-    "ApiKey": "YOUR_STEAM_API_KEY",
-    "SteamId": "YOUR_STEAM_ID_64",
-    "AuthCode": "YOUR_GAME_AUTH_CODE",
-    "StartShareCode": "CSGO-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-  },
   "Paths": {
     "HlaeExe": "E:\\Works\\HLAE\\HLAE.exe",
     "FfmpegExe": "C:\\Users\\Newgear\\AppData\\Local\\Microsoft\\WinGet\\Links\\ffmpeg.exe",
@@ -376,8 +396,6 @@ Each highlight/lowlight type from Section 5 gets one row: a `CheckBox` toggle an
   }
 }
 ```
-
-> **Always add `appsettings.json` to `.gitignore` before first commit.**
 
 ---
 
@@ -450,11 +468,11 @@ Every highlight and lowlight type in Section 5 has an individual toggle + thresh
 ### Phase 1 — Foundation
 - Core models, enums, interfaces
 - Database schema + EF Core migrations
-- Steam service: `GetNextMatchSharingCode` chaining + demo download
-- WinForms shell: `MainForm` with tab layout + `SettingsPanel` (save API key, paths, Steam ID)
+- `DemoFolderScanner` + `LightweightDemoReader` (scan folder, read header, player list)
+- WinForms shell: `MainForm` with tab layout + `SettingsPanel` (paths only) + `PlayerPickerDialog`
 
 ### Phase 2 — The Brain
-- `DemoParser` wrapping `DemoFile.Game.Cs`
+- `DemoParser` wrapping `DemoFile.Game.Cs` (full parse for selected player)
 - `MultiKillDetector` + `ClutchDetector` (highest value, cleanest signals)
 - `MatchesPanel` + `MatchDetailPanel` showing detected highlights in a `DataGridView`
 - `EntryFragDetector` + `DeathStreakDetector` + `FriendlyFireDetector`
