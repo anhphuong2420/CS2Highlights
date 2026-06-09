@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CS2Highlights.Core\CS2Highlights.Core.csproj" />
     <ProjectReference Include="..\CS2Highlights.Parser\CS2Highlights.Parser.csproj" />
+    <ProjectReference Include="..\CS2Highlights.DemoScanner\CS2Highlights.DemoScanner.csproj" />
   </ItemGroup>
 
 </Project>

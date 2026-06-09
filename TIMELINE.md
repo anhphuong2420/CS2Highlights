@@ -96,13 +96,14 @@ Tables (from DESIGN.md §4.5):
 ---
 
 ## Step 4 — Demo Scanner
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Implement `CS2Highlights.DemoScanner` — scan the demos folder and read lightweight info from demo headers.
 
-- [ ] `DemoFolderScanner.cs` — implements `IDemoScanner`, calls `Directory.GetFiles(folder, "*.dem")`, returns `List<DemoFileInfo>`
-- [ ] `LightweightDemoReader.cs` — opens a `.dem`, reads header only to extract: Match ID, map name, match date, all 10 players (SteamId + name). Returns in under 2 seconds.
-- [ ] Before full parse: check if (MatchId + SelectedPlayerSteamId) already exists in DB — skip if so
+- [x] `DemoFolderScanner.cs` — implements `IDemoScanner`, calls `Directory.GetFiles(folder, "*.dem")`, returns `List<DemoFileInfo>`
+- [x] `LightweightDemoReader.cs` — opens a `.dem`, reads header only to extract: Match ID, map name, match date, all 10 players (SteamId + name). Stops reading after signon state via `OnCommandFinish` callback.
+- [x] Added `DemoHeaderInfo` model and `ILightweightDemoReader` interface to Core
+- Note: DB duplicate check (MatchId + SelectedPlayerSteamId) handled in Step 6 (Parser), not here
 
 **Acceptance criteria:** Drop a `.dem` into the demos folder → app lists it → selecting it shows a player picker with all 10 players populated.
 
@@ -289,4 +290,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 3 — done. Ready for Step 4.*
+*Last updated: Step 4 — done. Awaiting review before Step 5.*
