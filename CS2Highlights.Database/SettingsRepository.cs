@@ -1,29 +1,31 @@
 using CS2Highlights.Database.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace CS2Highlights.Database;
 
 public class SettingsRepository
 {
-    private readonly AppDbContext _db;
+    private readonly IDbContextFactory<AppDbContext> _factory;
 
-    public SettingsRepository(AppDbContext db)
+    public SettingsRepository(IDbContextFactory<AppDbContext> factory)
     {
-        _db = db;
+        _factory = factory;
     }
 
     public string? Get(string key)
     {
-        return _db.UserSettings.Find(key)?.Value;
+        using var db = _factory.CreateDbContext();
+        return db.UserSettings.Find(key)?.Value;
     }
 
     public void Set(string key, string value)
     {
-        var existing = _db.UserSettings.Find(key);
+        using var db = _factory.CreateDbContext();
+        var existing = db.UserSettings.Find(key);
         if (existing is null)
-            _db.UserSettings.Add(new UserSettingEntity { Key = key, Value = value });
+            db.UserSettings.Add(new UserSettingEntity { Key = key, Value = value });
         else
             existing.Value = value;
-
-        _db.SaveChanges();
+        db.SaveChanges();
     }
 }

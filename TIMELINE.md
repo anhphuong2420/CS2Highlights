@@ -110,16 +110,17 @@ Implement `CS2Highlights.DemoScanner` — scan the demos folder and read lightwe
 ---
 
 ## Step 5 — WinForms Shell + Settings Panel
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Build the app skeleton — launch it, see a window, configure paths.
 
-- [ ] `Program.cs` — DI container setup, configure Serilog, launch `MainForm`
-- [ ] `MainForm.cs` — `TabControl` with tabs: Dashboard, Matches, Render, Clips, Settings
-- [ ] `SettingsPanel.cs` — form fields for: HLAE path, FFmpeg path, Demos folder, Clips folder, CFG folder
-- [ ] `PlayerPickerDialog.cs` — modal dialog showing a list of 10 players, returns selected `PlayerInfo`
-- [ ] Save/load all settings to `UserSettings` table via `SettingsRepository`
-- [ ] "Browse" buttons for file/folder path fields (`FolderBrowserDialog` / `OpenFileDialog`)
+- [x] `Program.cs` — DI container setup, configure Serilog, launch `MainForm`
+- [x] `MainForm.cs` — `TabControl` with tabs: Dashboard, Matches, Render, Clips, Settings
+- [x] `SettingsPanel.cs` — form fields for: HLAE path, FFmpeg path, Demos folder, Clips folder, CFG folder
+- [x] `PlayerPickerDialog.cs` — modal dialog showing a list of 10 players, returns selected `PlayerInfo`
+- [x] Save/load all settings to `UserSettings` table via `SettingsRepository`
+- [x] "Browse" buttons for file/folder path fields (`FolderBrowserDialog` / `OpenFileDialog`)
+- [x] Updated `SettingsRepository` to use `IDbContextFactory` (no long-lived DbContext)
 
 **Acceptance criteria:** App launches. You can fill in path settings and click Save. Values persist after restarting the app. Player picker dialog opens and returns a selection.
 
@@ -290,4 +291,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 4 — done. Awaiting review before Step 5.*
+*Last updated: Step 5 — done. Awaiting review before Step 6.*
