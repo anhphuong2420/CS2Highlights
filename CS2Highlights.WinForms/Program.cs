@@ -1,3 +1,4 @@
+using CS2Highlights.Core.Interfaces;
 using CS2Highlights.Database;
 using CS2Highlights.DemoScanner;
 using CS2Highlights.Parser;
@@ -38,6 +39,10 @@ static class Program
         services.AddSingleton<DemoFolderScanner>();
         services.AddSingleton<LightweightDemoReader>();
         services.AddSingleton<DemoParser>();
+
+        services.AddSingleton<IHighlightDetector, MultiKillDetector>();
+        services.AddSingleton<IHighlightDetector, ClutchDetector>();
+        services.AddSingleton<HighlightService>();
 
         services.AddTransient<MainForm>();
         services.AddTransient<SettingsPanel>();

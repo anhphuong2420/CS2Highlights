@@ -152,17 +152,19 @@ Notes:
 ---
 
 ## Step 7 — Highlight Detectors (Core Set)
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Implement the two highest-value detectors first.
 
-- [ ] `MultiKillDetector.cs` — group kills by (round, attacker), flag at threshold (3/4/5)
-- [ ] `ClutchDetector.cs` — track alive counts per team per tick, detect 1vX situations, flag win/loss
+- [x] `MultiKillDetector.cs` — groups selectedPlayer's kills by round, flags ≥3K with MultiKill3/4/5 type
+- [x] `ClutchDetector.cs` — tracks alive sets per team using kill events, detects 1vX win situations; handles halftime team switch + OT 3-round halves
+- [x] `HighlightService.cs` — runs all registered `IHighlightDetector`s, saves to Highlights table, returns cached results on re-run
+- [x] Detectors registered in DI as `IEnumerable<IHighlightDetector>` (open registration — adding Step 9 detectors requires no change to HighlightService)
+- [x] 17 unit tests — all pass (no demo file needed)
 
-Each detector:
-- Takes `ParsedMatch` + `DetectionOptions`
-- Returns `List<Highlight>`
-- Saves results to `Highlights` table
+Notes:
+- `ClutchDetector` requires `AllPlayers` to be populated — skips silently on cache-hit `ParsedMatch` (highlights loaded from DB instead)
+- `FailedClutch` is Step 9's `FailedClutchDetector`, not ClutchDetector
 
 **Acceptance criteria:** Running detectors on a parsed match produces at least one highlight entry in the DB (assuming the demo has any multi-kills or clutches).
 
@@ -299,4 +301,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 6 — done. Awaiting review before Step 7.*
+*Last updated: Step 7 — done. Awaiting review before Step 8.*
