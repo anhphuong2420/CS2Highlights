@@ -127,17 +127,25 @@ Build the app skeleton — launch it, see a window, configure paths.
 ---
 
 ## Step 6 — Demo Parser
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Implement `CS2Highlights.Parser` — two-phase parsing via `IDemoParser`.
 
-- [ ] `DemoParser.cs` implements both interface methods:
-  - `ReadPlayersAsync(demoPath)` — lightweight, reads header only, returns player list + match ID. Used to populate `PlayerPickerDialog`.
+- [x] `DemoParser.cs` implements both interface methods:
+  - `ReadPlayersAsync(demoPath)` — lightweight, reads header only, returns player list. Used to populate `PlayerPickerDialog`.
   - `ParseAsync(demoPath, selectedPlayer)` — full parse for the chosen player. Subscribes to game events, emits typed C# objects.
-- [ ] Full parse captures: kills, deaths, grenade throws + damage, round start/end, alive counts per team per tick
-- [ ] Returns `ParsedMatch` with all events sorted by tick
-- [ ] Saves raw events to SQLite (`Matches`, `Rounds`, `KillEvents`, `GrenadeEvents` tables)
-- [ ] Duplicate guard: if (MatchId + SelectedPlayerSteamId) already in DB → skip, return existing data
+- [x] Full parse captures: kills (all players), deaths (selected player), grenade throws + damage (selected player), round start/end
+- [x] Returns `ParsedMatch` with all events
+- [x] Saves raw events to SQLite (`Matches`, `Rounds`, `KillEvents`, `GrenadeEvents` tables)
+- [x] Duplicate guard: if (MatchId + SelectedPlayerSteamId) already in DB → skip, return existing data
+- [x] `DemoParser` registered as singleton in DI container
+- [x] 11 integration tests — all pass
+
+Notes:
+- `AllPlayers` is populated on live parse; returns `[]` on cache-hit (AllPlayers not stored in DB)
+- Grenade damage for molotov/incendiary spans ticks — aggregated until round_end
+- Flash grenade blinds: only counted if BlindDuration ≥ 0.5s (near-misses excluded)
+- ClutchEvents left empty — computed by ClutchDetector in Step 7
 
 **Acceptance criteria:** Select a demo → pick a player → full parse runs → DB populated with kills, rounds, grenade events. Picking the same demo + player again skips parsing. Verified in DB Browser.
 
@@ -291,4 +299,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 5 — done. Awaiting review before Step 6.*
+*Last updated: Step 6 — done. Awaiting review before Step 7.*

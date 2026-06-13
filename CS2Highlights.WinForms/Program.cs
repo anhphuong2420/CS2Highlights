@@ -1,5 +1,6 @@
 using CS2Highlights.Database;
 using CS2Highlights.DemoScanner;
+using CS2Highlights.Parser;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -36,6 +37,7 @@ static class Program
         services.AddSingleton<SettingsRepository>();
         services.AddSingleton<DemoFolderScanner>();
         services.AddSingleton<LightweightDemoReader>();
+        services.AddSingleton<DemoParser>();
 
         services.AddTransient<MainForm>();
         services.AddTransient<SettingsPanel>();
