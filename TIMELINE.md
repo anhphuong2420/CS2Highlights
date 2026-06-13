@@ -171,13 +171,14 @@ Notes:
 ---
 
 ## Step 8 — Matches Panel + Match Detail Panel
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Build the UI to browse demos and see their detected highlights.
 
-- [ ] `DashboardPanel.cs` — scans demos folder on load, lists `.dem` files in a `DataGridView` (filename, size, date). "Parse" button triggers lightweight scan → `PlayerPickerDialog` → full parse.
-- [ ] `MatchesPanel.cs` — `DataGridView` listing all parsed demos from DB (map, date, selected player, parse status).
-- [ ] `MatchDetailPanel.cs` — opens when a parsed demo is selected. Shows list of detected highlights/lowlights with type, round, description. "Add to Render Queue" button per highlight.
+- [x] `DashboardPanel.cs` — scans demos folder on load, lists `.dem` files in a `DataGridView` (filename, size, date, "Parsed?" column). "Parse" button: reads players → PlayerPickerDialog → DemoParser.ParseAsync → HighlightService.RunAsync. Async throughout — UI stays responsive. "Parsed?" column checks DB by DemoPath.
+- [x] `MatchesPanel.cs` — `DataGridView` listing all parsed demos from DB (filename, map, date, player, highlight count). Refresh on demand or automatically after a parse.
+- [x] `MatchDetailForm.cs` — opens as a child window when double-clicking a row or clicking "View Details". Shows match header + highlights grid (type, round, description, tick range). "Add to Render Queue" stub with Step 12 message.
+- [x] `MainForm.cs` — replaced placeholder tabs with real `DashboardPanel` and `MatchesPanel`. After parse: auto-refreshes Matches tab and switches to it.
 
 **Acceptance criteria:** Drop a demo → parse it → open match detail → see highlights listed. Parsing the same demo + player again skips to showing existing highlights.
 
@@ -301,4 +302,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 7 — done. Awaiting review before Step 8.*
+*Last updated: Step 8 — done. Awaiting review before Step 9.*

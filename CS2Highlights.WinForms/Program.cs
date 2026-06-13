@@ -45,6 +45,8 @@ static class Program
         services.AddSingleton<HighlightService>();
 
         services.AddTransient<MainForm>();
+        services.AddTransient<DashboardPanel>();
+        services.AddTransient<MatchesPanel>();
         services.AddTransient<SettingsPanel>();
 
         var provider = services.BuildServiceProvider();
