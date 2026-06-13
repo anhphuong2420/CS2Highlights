@@ -4,13 +4,12 @@ using CS2Highlights.Core.Models;
 
 namespace CS2Highlights.Parser;
 
-public class ClutchDetector : IHighlightDetector
+public class FailedClutchDetector : IHighlightDetector
 {
     public Task<List<Highlight>> DetectAsync(ParsedMatch match, DetectionOptions options)
     {
         var highlights = new List<Highlight>();
-
-        if (!options.ClutchEnabled || match.AllPlayers.Count == 0)
+        if (!options.FailedClutchEnabled || match.AllPlayers.Count == 0)
             return Task.FromResult(highlights);
 
         foreach (var round in match.Rounds)
@@ -28,51 +27,40 @@ public class ClutchDetector : IHighlightDetector
                 .Select(p => p.SteamId)
                 .ToHashSet();
 
-            bool selectedAlive = true;
-            int clutchStartTick = -1;
+            int clutchStartTick  = -1;
             int clutchEnemyCount = 0;
 
-            var roundKills = match.Kills
-                .Where(k => k.RoundNumber == round.RoundNumber)
-                .OrderBy(k => k.Tick);
-
-            foreach (var kill in roundKills)
+            foreach (var kill in match.Kills.Where(k => k.RoundNumber == round.RoundNumber).OrderBy(k => k.Tick))
             {
                 if (kill.VictimSteamId == match.SelectedPlayer.SteamId)
-                {
-                    selectedAlive = false;
                     break;
-                }
 
                 teammatesAlive.Remove(kill.VictimSteamId);
                 enemiesAlive.Remove(kill.VictimSteamId);
 
-                // Detect the moment selectedPlayer becomes last alive
                 if (clutchStartTick < 0 && teammatesAlive.Count == 0 && enemiesAlive.Count > 0)
                 {
-                    clutchStartTick = kill.Tick;
+                    clutchStartTick  = kill.Tick;
                     clutchEnemyCount = enemiesAlive.Count;
                 }
             }
 
-            if (!selectedAlive || clutchStartTick < 0) continue;
-            if (clutchEnemyCount < options.OutnumberedWinMinEnemies) continue;
+            if (clutchStartTick < 0) continue;
 
             var playerSide = playerTeam == "CounterTerrorist" ? TeamSide.CT : TeamSide.T;
-            if (round.WinnerSide != playerSide) continue;
+            if (round.WinnerSide == playerSide) continue; // won = Clutch highlight, not lowlight
 
             highlights.Add(new Highlight
             {
-                MatchId = match.MatchId,
-                RoundNumber = round.RoundNumber,
-                HighlightType = HighlightType.Clutch,
-                TickStart = clutchStartTick,
-                TickEnd = round.TickEnd,
-                Description = $"1v{clutchEnemyCount} clutch win (R{round.RoundNumber})"
+                MatchId      = match.MatchId,
+                RoundNumber  = round.RoundNumber,
+                LowlightType = LowlightType.FailedClutch,
+                TickStart    = clutchStartTick,
+                TickEnd      = round.TickEnd,
+                Description  = $"1v{clutchEnemyCount} — round lost (R{round.RoundNumber})"
             });
         }
 
         return Task.FromResult(highlights);
     }
-
 }

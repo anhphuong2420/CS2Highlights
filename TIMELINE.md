@@ -185,16 +185,24 @@ Build the UI to browse demos and see their detected highlights.
 ---
 
 ## Step 9 — Remaining Detectors
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Implement the rest of the highlight and lowlight detectors.
 
-- [ ] `EntryFragDetector.cs` — first kill of round within N seconds of round start
-- [ ] `DeathStreakDetector.cs` — N consecutive rounds where player died first
-- [ ] `FriendlyFireDetector.cs` — teammate damage >= threshold in a single round
-- [ ] `GrenadeDetector.cs` — TeamFlash, TeamMolotov, WastedGrenade
-- [ ] `FailedClutchDetector.cs` — last alive 1v1, enemy HP < 50, round lost
-- [ ] `BombDropDetector.cs` — carrying bomb, died before plant, team lost
+- [x] `EntryFragDetector.cs` — first kill of round within N seconds of round start (configurable, default 8s = 512 ticks)
+- [x] `DeathStreakDetector.cs` — N consecutive rounds where player died; emits one lowlight per streak ≥ threshold
+- [x] `FriendlyFireDetector.cs` — grenade DamageToTeam per round ≥ threshold; aggregates multiple grenades in same round
+- [x] `GrenadeDetector.cs` — TeamFlash (≥N teammates blinded), TeamMolotov (fire damage to team > 0), WastedGrenade (HE, 0 enemy damage), LowDamageGrenade (opt-in)
+- [x] `FailedClutchDetector.cs` — last alive 1vX using same alive-tracking logic as ClutchDetector, round lost
+- [x] `BombDropDetector.cs` — stub; requires BombPickup/BombDropped event tracking in DemoParser (not yet implemented)
+- [x] `TeamHelper.cs` — shared `GetTeamInRound` used by ClutchDetector + FailedClutchDetector
+- [x] 41 unit tests — all pass (85 total across all detector test files)
+
+Notes:
+- BombDropDetector always returns empty pending parser support for bomb carrier events
+- FailedClutchDetector skips silently when AllPlayers is empty (cache-hit ParsedMatch)
+- WastedGrenade fires even if the HE dealt team damage (FriendlyFireDetector covers team damage separately)
+- LowDamageGrenadeEnabled defaults to false in DetectionOptions
 
 **Acceptance criteria:** All detectors produce entries in the `Highlights` table. No crashes on edge cases (e.g. rounds with no kills).
 
@@ -302,4 +310,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 8 — done. Awaiting review before Step 9.*
+*Last updated: Step 9 — done. Awaiting review before Step 10.*

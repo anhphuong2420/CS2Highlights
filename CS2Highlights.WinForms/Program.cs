@@ -42,6 +42,12 @@ static class Program
 
         services.AddSingleton<IHighlightDetector, MultiKillDetector>();
         services.AddSingleton<IHighlightDetector, ClutchDetector>();
+        services.AddSingleton<IHighlightDetector, EntryFragDetector>();
+        services.AddSingleton<IHighlightDetector, DeathStreakDetector>();
+        services.AddSingleton<IHighlightDetector, FriendlyFireDetector>();
+        services.AddSingleton<IHighlightDetector, GrenadeDetector>();
+        services.AddSingleton<IHighlightDetector, FailedClutchDetector>();
+        services.AddSingleton<IHighlightDetector, BombDropDetector>();
         services.AddSingleton<HighlightService>();
 
         services.AddTransient<MainForm>();
