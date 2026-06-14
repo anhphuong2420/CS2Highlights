@@ -272,16 +272,27 @@ Closes the file without doing a full parse. Completes in under 2 seconds for any
 Generates a CS2 console script (`.cfg`) for each clip. Example output for one highlight:
 
 ```
+// cs2highlights auto-generated — do not edit
+mirv_streams record screen enabled 1
+mirv_streams record fps 300
+mirv_streams record name "C:\CS2Highlights\clips\clip_r5_multikill"
+
+mirv_streams settings add ffmpeg cs2hl_enc "-c:v h264_nvenc -preset p4 -b:v 20M -pix_fmt yuv420p {QUOTE}{AFX_STREAM_PATH}\clip.mp4{QUOTE}"
+mirv_streams settings edit afxDefault settings cs2hl_enc
+
+mirv_cmd addAtTick 44480 "spec_lock_to_accountid 107535193; mirv_streams record start"
+mirv_cmd addAtTick 46692 "mirv_streams record end; quit"
+
 playdemo "C:\demos\match_abc123.dem"
-demo_gototick 44800
-spec_lock_to_accountid 123456789
-mirv_streams add normal myCapture
-mirv_streams settings edit myCapture record 1
-mirv_streams record start
-demo_gototick 46500
-mirv_streams record end
-quit
+demo_gototick 44380
 ```
+
+Notes:
+- `mirv_streams record name` sets the output folder; `{AFX_STREAM_PATH}` in the FFmpeg args expands to it
+- `mirv_cmd addAtTick` schedules commands to fire when the demo reaches that tick (not immediately)
+- `spec_lock_to_accountid` takes the 32-bit Steam AccountID (`SteamID64 - 76561197960265728`)
+- `demo_gototick` at the end seeks to just before the clip start so the demo is ready when the first `mirv_cmd` fires
+- FFmpeg is configured via `E:\Works\HLAE\ffmpeg\ffmpeg.ini` (Option B — path reference to winget FFmpeg)
 
 #### HlaeRenderer.cs
 
@@ -293,8 +304,6 @@ E:\Works\HLAE\HLAE.exe
   -steam
   -autoConfig "C:\CS2Highlights\cfg\job_001.cfg"
   -noGui
-  -mmcfgEnabled true
-  -mmcfg "C:\CS2Highlights\cfg\mirv_base.cfg"
 ```
 
 #### FfmpegEncoder.cs

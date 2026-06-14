@@ -209,14 +209,22 @@ Notes:
 ---
 
 ## Step 10 — CFG Script Builder
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Implement `CfgScriptBuilder.cs` in `CS2Highlights.Renderer`.
 
-- [ ] Takes a `RenderJob` (demo path, tick start, tick end, player SteamId, `RenderSettings`)
-- [ ] Generates a `.cfg` file with `mirv_streams` commands (see DESIGN.md §4.4 for example output)
-- [ ] Saves `.cfg` to the configured CFG folder
-- [ ] Handles pre/post buffer ticks (convert seconds → ticks at 64 tick rate)
+- [x] Takes a `RenderJob` (demo path, tick start, tick end, player SteamId, `RenderSettings`)
+- [x] Generates a `.cfg` file with correct `mirv_streams` + `mirv_cmd` commands
+- [x] Saves `.cfg` to the configured CFG folder; returns `(cfgPath, clipPath)` tuple
+- [x] Handles pre/post buffer ticks (seconds × 64 tick rate), clamped to 0
+- [x] Computes Steam32 AccountID from SteamID64 (`id - 76561197960265728`)
+- [x] Builds FFmpeg args with encoder-specific presets (h264_nvenc / libx264 / fallback)
+- [x] 15 unit tests — all pass (100 total)
+
+Notes:
+- `mirv_cmd addAtTick` schedules record start/stop at exact demo ticks
+- `{QUOTE}` and `{AFX_STREAM_PATH}` are HLAE template variables — literal in the .cfg file
+- `E:\Works\HLAE\ffmpeg\ffmpeg.ini` created (Option B) to point HLAE at winget FFmpeg
 
 **Acceptance criteria:** Given a `RenderJob`, produces a valid `.cfg` file in the CFG folder. Contents match the expected `mirv_streams` command structure.
 
@@ -310,4 +318,4 @@ Final hardening pass.
 
 ---
 
-*Last updated: Step 9 — done. Awaiting review before Step 10.*
+*Last updated: Step 10 — done. Awaiting review before Step 11.*

@@ -26,6 +26,7 @@
     <ProjectReference Include="..\CS2Highlights.Core\CS2Highlights.Core.csproj" />
     <ProjectReference Include="..\CS2Highlights.Parser\CS2Highlights.Parser.csproj" />
     <ProjectReference Include="..\CS2Highlights.DemoScanner\CS2Highlights.DemoScanner.csproj" />
+    <ProjectReference Include="..\CS2Highlights.Renderer\CS2Highlights.Renderer.csproj" />
   </ItemGroup>
 
 </Project>
