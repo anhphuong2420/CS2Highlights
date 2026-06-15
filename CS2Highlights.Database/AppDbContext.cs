@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<HighlightEntity> Highlights { get; set; }
     public DbSet<RenderJobEntity> RenderJobs { get; set; }
     public DbSet<UserSettingEntity> UserSettings { get; set; }
+    public DbSet<DemoDetailEntity> DemoDetails { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -45,5 +46,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<RenderJobEntity>()
             .Property(r => r.Status)
             .HasConversion<string>();
+
+        modelBuilder.Entity<DemoDetailEntity>()
+            .HasIndex(d => d.FileName)
+            .IsUnique();
     }
 }

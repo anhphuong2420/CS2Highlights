@@ -17,6 +17,7 @@ public class DashboardPanel : UserControl
 
     private DataGridView _grid = null!;
     private Button _parseButton = null!;
+    private Button _detailButton = null!;
     private Button _scanButton = null!;
     private Label _folderLabel = null!;
     private Label _statusLabel = null!;
@@ -103,18 +104,26 @@ public class DashboardPanel : UserControl
             RowHeadersVisible = false,
             BackgroundColor = SystemColors.Window
         };
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "FileName", HeaderText = "File",    FillWeight = 45 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Size",     HeaderText = "Size",    FillWeight = 12 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date",     HeaderText = "Date",    FillWeight = 25 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Parsed",   HeaderText = "Parsed?", FillWeight = 18 });
-        _grid.SelectionChanged += (_, _) => _parseButton.Enabled = _grid.SelectedRows.Count > 0;
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "FileName", HeaderText = "File",    FillWeight = 32 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Map",      HeaderText = "Map",     FillWeight = 22 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Size",     HeaderText = "Size",    FillWeight = 10 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date",     HeaderText = "Date",    FillWeight = 22 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Parsed",   HeaderText = "Parsed?", FillWeight = 14 });
+        _grid.SelectionChanged += (_, _) =>
+        {
+            var hasRow = _grid.SelectedRows.Count > 0;
+            _parseButton.Enabled  = hasRow;
+            _detailButton.Enabled = hasRow;
+        };
 
-        // Bottom bar: Parse button + status
+        // Bottom bar: Parse button | Detail button | status
         var bottomBar = new Panel { Dock = DockStyle.Bottom, Height = 40 };
-        _parseButton = new Button { Text = "Parse Selected Demo", Location = new Point(0, 7), Width = 155, Height = 26, Enabled = false };
-        _parseButton.Click += ParseButton_Click;
-        _statusLabel = new Label { Location = new Point(163, 11), AutoSize = true, ForeColor = SystemColors.GrayText };
-        bottomBar.Controls.AddRange([_parseButton, _statusLabel]);
+        _parseButton  = new Button { Text = "Parse Selected Demo", Location = new Point(0, 7),   Width = 155, Height = 26, Enabled = false };
+        _detailButton = new Button { Text = "Detail",              Location = new Point(161, 7), Width = 70,  Height = 26, Enabled = false };
+        _parseButton.Click  += ParseButton_Click;
+        _detailButton.Click += DetailButton_Click;
+        _statusLabel = new Label { Location = new Point(238, 11), AutoSize = true, ForeColor = SystemColors.GrayText };
+        bottomBar.Controls.AddRange([_parseButton, _detailButton, _statusLabel]);
 
         Controls.Add(_grid);
         Controls.Add(bottomBar);
@@ -134,11 +143,16 @@ public class DashboardPanel : UserControl
 
         using var db = _dbFactory.CreateDbContext();
         var parsedPaths = db.Matches.Select(m => m.DemoPath).ToHashSet();
+        var cachedMaps  = db.DemoDetails
+            .Select(d => new { d.FileName, d.MapName })
+            .ToDictionary(d => d.FileName, d => d.MapName);
 
         foreach (var demo in demos)
         {
+            var mapName = cachedMaps.TryGetValue(demo.FileName, out var m) ? m : "—";
             _grid.Rows.Add(
                 demo.FileName,
+                mapName,
                 FormatSize(demo.FileSizeBytes),
                 demo.LastModified.ToString("yyyy-MM-dd HH:mm"),
                 parsedPaths.Contains(demo.FilePath) ? "Yes" : "—");
@@ -183,6 +197,22 @@ public class DashboardPanel : UserControl
             _parseButton.Enabled = true;
             _scanButton.Enabled = true;
         }
+    }
+
+    private void DetailButton_Click(object? sender, EventArgs e)
+    {
+        if (_grid.SelectedRows.Count == 0) return;
+        var demo = (DemoFileInfo)_grid.SelectedRows[0].Tag!;
+        var row  = _grid.SelectedRows[0];
+
+        using var form = new DemoOverviewForm(demo, _dbFactory, _reader);
+        form.ShowDialog(this);
+
+        // After the form closes, refresh Map column in case it was just cached for the first time.
+        using var db = _dbFactory.CreateDbContext();
+        var cached = db.DemoDetails.FirstOrDefault(d => d.FileName == demo.FileName);
+        if (cached != null)
+            row.Cells["Map"].Value = cached.MapName;
     }
 
     private void SetStatus(string text, Color color)
