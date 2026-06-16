@@ -246,7 +246,8 @@ public class CfgScriptBuilderTests
 
         Assert.That(content, Does.Contain("record end; quit"));
         // "record end" without quit appears exactly once (for the non-last clip)
-        var endOnlyCount = content.Split("record end\r\n").Length + content.Split("record end\n").Length - 2;
+        var endOnlyCount = content.Split('\n')
+            .Count(line => line.Contains("record end") && !line.Contains("quit"));
         Assert.That(endOnlyCount, Is.EqualTo(1));
     }
 

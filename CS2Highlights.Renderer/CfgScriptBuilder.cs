@@ -29,7 +29,7 @@ public class CfgScriptBuilder
     {
         var settings   = jobs[0].Settings;
         var demoPath   = jobs[0].DemoPath;
-        var ffmpegArgs = BuildFfmpegArgs(settings);
+        var ffmpegArgs = FfmpegEncoder.BuildArgs(settings);
 
         var entries = jobs.Select(j => (
             job:       j,
@@ -68,6 +68,7 @@ public class CfgScriptBuilder
         sb.AppendLine();
         sb.AppendLine($"playdemo \"{demoPath}\"");
         sb.AppendLine($"demo_gototick {seekTick}");
+        sb.AppendLine("host_framerate 300");
 
         Directory.CreateDirectory(cfgFolder);
         var demoName = Path.GetFileNameWithoutExtension(demoPath);
@@ -75,19 +76,6 @@ public class CfgScriptBuilder
         File.WriteAllText(cfgPath, sb.ToString());
 
         return new BatchResult(cfgPath, clipOutputs);
-    }
-
-    private static string BuildFfmpegArgs(RenderSettings settings)
-    {
-        var scale       = settings.OutputResolution.Replace("x", ":");
-        var encoderArgs = settings.Encoder switch
-        {
-            "h264_nvenc" => "-c:v h264_nvenc -preset p4 -b:v 20M -pix_fmt yuv420p",
-            "libx264"    => "-c:v libx264 -crf 18 -preset medium -pix_fmt yuv420p",
-            _            => $"-c:v {settings.Encoder} -pix_fmt yuv420p"
-        };
-        // {QUOTE} and {AFX_STREAM_PATH} are HLAE template variables, literal in the .cfg
-        return $"{encoderArgs} -vf scale={scale} {{QUOTE}}{{AFX_STREAM_PATH}}\\\\clip.mp4{{QUOTE}}";
     }
 
     private static long ToAccountId(string steamId64)
