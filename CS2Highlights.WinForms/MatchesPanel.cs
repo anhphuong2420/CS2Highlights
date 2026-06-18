@@ -6,11 +6,13 @@ namespace CS2Highlights.WinForms;
 public class MatchesPanel : UserControl
 {
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
+    private readonly RenderQueue _queue;
     private DataGridView _grid = null!;
 
-    public MatchesPanel(IDbContextFactory<AppDbContext> dbFactory)
+    public MatchesPanel(IDbContextFactory<AppDbContext> dbFactory, RenderQueue queue)
     {
         _dbFactory = dbFactory;
+        _queue = queue;
         BuildLayout();
         LoadMatches();
     }
@@ -78,6 +80,6 @@ public class MatchesPanel : UserControl
     {
         if (_grid.SelectedRows.Count == 0) return;
         var matchId = (int)_grid.SelectedRows[0].Tag!;
-        new MatchDetailForm(matchId, _dbFactory).Show(this);
+        new MatchDetailForm(matchId, _dbFactory, _queue).Show(this);
     }
 }

@@ -2,6 +2,7 @@ using CS2Highlights.Core.Interfaces;
 using CS2Highlights.Database;
 using CS2Highlights.DemoScanner;
 using CS2Highlights.Parser;
+using CS2Highlights.Renderer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -49,6 +50,11 @@ static class Program
         services.AddSingleton<IHighlightDetector, FailedClutchDetector>();
         services.AddSingleton<IHighlightDetector, BombDropDetector>();
         services.AddSingleton<HighlightService>();
+
+        services.AddSingleton<CfgScriptBuilder>();
+        services.AddSingleton<HlaeRenderer>();
+        services.AddSingleton<RenderQueue>();
+        services.AddSingleton<RenderPanel>();
 
         services.AddTransient<MainForm>();
         services.AddTransient<DashboardPanel>();

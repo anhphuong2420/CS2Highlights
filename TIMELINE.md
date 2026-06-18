@@ -231,13 +231,19 @@ Notes:
 ---
 
 ## Step 11 — HLAE Renderer + FFmpeg Encoder
-**Status:** `[ ]`
+**Status:** `[x]`
 
 Implement `HlaeRenderer.cs` and `FfmpegEncoder.cs`.
 
-- [ ] `HlaeRenderer.cs` — builds HLAE CLI arguments (`-csgo -steam -autoConfig ... -noGui -mmcfgEnabled true -mmcfg ...`), launches via `Process.Start`, waits for CS2 to exit, verifies output `.mp4` exists
-- [ ] `FfmpegEncoder.cs` — configures `h264_nvenc` NVENC pipe args (`-c:v h264_nvenc -preset p4 -b:v 20M -pix_fmt yuv420p -vf scale=1920:1080`)
-- [ ] Create `mirv_base.cfg` template (base HLAE config, written to CFG folder on first run)
+- [x] `HlaeRenderer.cs` — builds HLAE CLI args (`-csgo -steam -autoConfig "cfg" -noGui`), launches via `Process.Start`, streams stdout/stderr to `IProgress<string>`, waits for CS2 to exit, kills process tree on cancellation, verifies all expected `.mp4` files exist
+- [x] `FfmpegEncoder.cs` — static helper that builds FFmpeg arg string for h264_nvenc / libx264 / fallback; used by `CfgScriptBuilder`
+- [x] `CfgScriptBuilder` updated: delegates to `FfmpegEncoder.BuildArgs`, adds `host_framerate 300` to generated `.cfg` (5× playback speed)
+- [x] Fixed pre-existing failing test (`Only_last_clip_stop_command_includes_quit`)
+
+Notes:
+- No `mirv_base.cfg` needed — full cfg is generated inline by `CfgScriptBuilder`
+- FFmpeg found by HLAE via `E:\Works\HLAE\ffmpeg\ffmpeg.ini` (Option B)
+- `host_framerate 300` reduces a 30s clip from 30s render time to ~6s
 
 **Acceptance criteria:** Triggering a render on a known highlight launches CS2+HLAE, plays back the demo, and produces an `.mp4` file in the clips folder.
 

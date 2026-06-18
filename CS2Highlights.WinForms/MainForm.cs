@@ -2,12 +2,12 @@ namespace CS2Highlights.WinForms;
 
 public class MainForm : Form
 {
-    public MainForm(DashboardPanel dashboardPanel, MatchesPanel matchesPanel, SettingsPanel settingsPanel)
+    public MainForm(DashboardPanel dashboardPanel, MatchesPanel matchesPanel, SettingsPanel settingsPanel, RenderPanel renderPanel)
     {
-        BuildLayout(dashboardPanel, matchesPanel, settingsPanel);
+        BuildLayout(dashboardPanel, matchesPanel, settingsPanel, renderPanel);
     }
 
-    private void BuildLayout(DashboardPanel dashboardPanel, MatchesPanel matchesPanel, SettingsPanel settingsPanel)
+    private void BuildLayout(DashboardPanel dashboardPanel, MatchesPanel matchesPanel, SettingsPanel settingsPanel, RenderPanel renderPanel)
     {
         Text = "CS2Highlights";
         MinimumSize = new Size(1000, 680);
@@ -30,7 +30,10 @@ public class MainForm : Form
 
         tabs.TabPages.Add(dashboardPage);
         tabs.TabPages.Add(matchesPage);
-        tabs.TabPages.Add(Placeholder("Render", "Render queue — coming in Step 12"));
+        var renderPage = new TabPage("Render");
+        renderPanel.Dock = DockStyle.Fill;
+        renderPage.Controls.Add(renderPanel);
+        tabs.TabPages.Add(renderPage);
         tabs.TabPages.Add(Placeholder("Clips",  "Clip gallery — coming in Step 13"));
         tabs.TabPages.Add(settingsPage);
 
